@@ -38,6 +38,6 @@ html {
 }
 body {
       font-family: Arial, Helvetica, sans-serif; /* Set a default font */
-      cursor: none; /* Hide the default cursor to use the custom one */
+      /* cursor: none; Hide the default cursor to use the custom one */
     }
     

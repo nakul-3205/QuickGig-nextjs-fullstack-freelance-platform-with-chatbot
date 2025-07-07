@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Sun, Moon, Mail, Lock, Briefcase, TrendingUp, Zap, Chrome } from 'lucide-react';
-
+import { useUser } from '@clerk/clerk-react';
 // THREE.JS IMPORTS
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
@@ -103,6 +103,7 @@ function SignInRoute() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const { user } = useUser();
 
   // Dark mode logic
   useEffect(() => {
@@ -116,58 +117,66 @@ function SignInRoute() {
     }
   }, []);
 
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
+  // useEffect(() => {
+  //   if (darkMode) {
+  //     document.documentElement.classList.add('dark');
+  //     localStorage.setItem('theme', 'dark');
+  //   } else {
+  //     document.documentElement.classList.remove('dark');
+  //     localStorage.setItem('theme', 'light');
+  //   }
+  // }, [darkMode]);
 
   // Handle Signin submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isLoaded) {
-      return;
-    }
-    setLoading(true);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!isLoaded) return;
+  setLoading(true);
 
-    try {
-      const result = await signIn.create({
-        identifier: emailAddress,
-        password,
-      });
+  try {
+    const result = await signIn.create({
+      identifier: emailAddress,
+      password,
+    });
 
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
+    if (result.status === 'complete') {
+      await setActive({ session: result.createdSessionId });
+      router.refresh();
 
-       
-        const userRole = result.createdSession?.user?.unsafeMetadata?.role as Roles | undefined;
+      
+      setTimeout(async () => {
+        try {
+          const res = await fetch('/api/get-user-role');
+          const data = await res.json();
+          const userRole = data.role;
 
-        if (userRole === 'client') {
-          toast.success('Signed in as Client! Redirecting...');
-          router.push('/client/dashboard');
-        } else if (userRole === 'freelancer') {
-          toast.success('Signed in as Freelancer! Redirecting...');
-          router.push('/freelancer/dashboard');
-        } else {
-          // If user has no role (e.g., new social login user), redirect to select-role page
-          toast.success('Signed in! Please select your role.');
-          router.push('/select-role');
+          if (userRole === 'client') {
+            toast.success('Signed in as Client! Redirecting...');
+            router.push('/client/dashboard');
+          } else if (userRole === 'freelancer') {
+            toast.success('Signed in as Freelancer! Redirecting...');
+            router.push('/freelancer/dashboard');
+          } else {
+            toast('Signed in! Please select your role.');
+            router.push('/select-role');
+          }
+        } catch (err) {
+          toast.error('Failed to fetch user role.');
+          console.error('Role fetch error:', err);
         }
-      } else {
-        console.warn('Sign-in not complete, status:', result.status);
-        toast.error('Sign-in requires further steps. Please check your email or app.');
-      }
-    } catch (err: any) {
-      console.error('Error signing in:', JSON.stringify(err, null, 2));
-      toast.error(err.errors?.[0]?.longMessage || 'Failed to sign in. Please check your credentials.');
-    } finally {
-      setLoading(false);
+      }, 2000);
+    } else {
+      toast.error('Sign-in incomplete. Check your email or app.');
     }
-  };
+  } catch (err: any) {
+    console.error('Sign-in error:', err);
+    toast.error(err.errors?.[0]?.longMessage || 'Login failed.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const signInWithGoogle = async () => {
     if (!isLoaded) return;

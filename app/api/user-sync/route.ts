@@ -6,7 +6,7 @@ export async function POST(req:NextRequest) {
     try {
         await connectToDBS()
         const body=await req.json()
-        const {clerkId,email,role}=body
+        const {clerkId,email,role,portfoliosite}=body
         console.log(body)
         if (!clerkId || !email || !role) {
           console.log('reached loop')
@@ -22,7 +22,9 @@ export async function POST(req:NextRequest) {
       {
         email,
         role,
+        
         onboardingComplete: false 
+
       },
       {
         upsert: true,

@@ -18,11 +18,13 @@ export async function POST(req:NextRequest) {
       {
         bio,
         skills,
-        portfoliosite: portfoliosite || '', // Optional
+        portfoliosite: portfoliosite || '', 
         onboardingComplete: true
       },
       { new: true }
     )
+    console.log('User after update:', updatedUser?.portfoliosite)
+
     if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }

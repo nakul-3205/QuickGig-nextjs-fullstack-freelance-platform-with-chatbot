@@ -11,7 +11,7 @@ const isPublicRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const {userId,sessionClaims}=await auth()
   const role = sessionClaims?.metadata?.role
-  
+  // console.log(role)
   if(!userId && !isPublicRoute(req)){
     const url = new URL('/sign-up',req.url)
     return NextResponse.redirect(url)
@@ -27,6 +27,12 @@ export default clerkMiddleware(async (auth, req) => {
      }
   }
   const path = req.nextUrl.pathname;
+  if(userId && role && path==='/select-role'){
+    console.log('reacheddd here')
+    const url = new URL(`/${role}/dashboard`,req.url)
+    return NextResponse.redirect(url)
+  }
+  
   if(userId && !role && path!=='/select-role'){
     
     const url = new URL('/select-role',req.url)

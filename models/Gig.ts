@@ -11,6 +11,8 @@ export interface IGig{
     status: 'open' | 'in_progress' | 'closed';
     postedBy: mongoose.Types.ObjectId;
     applicants?: mongoose.Types.ObjectId[];
+    tags: [{ type: String }]
+
 
 }
 
@@ -21,8 +23,9 @@ const gigSchema=new Schema <IGig>({
       budget:{ type: Number, required: true },
       deadline:{ type: Date, required: true },
       status:{ type: String, required: true ,enum:['open' , 'in_progress' , 'closed']},
-      postedBy:{type:mongoose.Schema.Types.ObjectId,ref:User},
-      applicants:[{type:mongoose.Schema.Types.ObjectId,ref:User}]
+      postedBy:{type:mongoose.Schema.Types.ObjectId,ref:"User"},
+      applicants:[{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
+       tags: [{ type: String }]
 
 },{timestamps:true})
 
