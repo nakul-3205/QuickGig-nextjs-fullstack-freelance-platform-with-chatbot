@@ -143,9 +143,8 @@ function SignInRoute() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
 
-        // --- Role-based Redirection Logic ---
-        // Ensure your Clerk type extensions correctly define publicMetadata.role
-        const userRole = result.createdSession?.user?.publicMetadata?.role as Roles | undefined;
+       
+        const userRole = result.createdSession?.user?.unsafeMetadata?.role as Roles | undefined;
 
         if (userRole === 'client') {
           toast.success('Signed in as Client! Redirecting...');

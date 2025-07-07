@@ -202,6 +202,16 @@ function SelecRolePage() {
          unsafeMetadata: { role }
         // publicMetadata: { role }
       });
+      await fetch('/api/user-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clerkId: user?.id,
+        email: user?.emailAddresses[0]?.emailAddress,
+        // name: `${user?.firstName} ${user?.lastName}`,
+        role
+      })
+    })
 
       toast.success(`Role set as ${role}! Redirecting to your dashboard.`);
              console.log('rederceting ')
@@ -210,7 +220,7 @@ function SelecRolePage() {
           router.push('/client/dashboard')
         }
         if (role === 'freelancer') {
-          router.push('/freelancer/dashboard')
+          router.push('/freelancer/on-boarding')
         }
         setLoading(false)
       }, 1000);
