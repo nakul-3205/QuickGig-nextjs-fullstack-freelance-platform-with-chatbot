@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     const clerkId = req.nextUrl.searchParams.get('clerkId');
     const userToFind = clerkId || authUserId;
-          console.log('error here',userToFind)
+          // console.log('error here',userToFind)
  
 
     const user = await clerkClient().then(client => client.users.getUser(userToFind));
@@ -32,11 +32,26 @@ export async function GET(req: NextRequest) {
     });
           // console.log('error in',data)
 
-
+        console.log(data)
     if (!data) {
       // console.log('error in data')
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    const responsePayload = {
+  email: user?.emailAddresses?.[0]?.emailAddress || "",
+  bio: data.bio || "",
+  skills: data.skills || [],
+  portfoliosite: data.portfoliosite || "",
+  appliedGigs: data.applications.map((app: any) => ({
+    applicationId: app._id,
+    gigId: app.gig?._id,
+    gigTitle: app.gig?.title || "Untitled",
+    status: app.status,
+    appliedAt: app.createdAt,
+  })),
+};
+console.log('response',responsePayload)
+
 
     return NextResponse.json({
       email: user?.emailAddresses?.[0]?.emailAddress || "",
@@ -116,5 +131,55 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     console.error("PUT /api/get-user ERROR", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+
+export async function  DELETE(req:NextRequest) {
+  try {
+    await connectToDBS()
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { applicationId, bio, skills, portfoliosite } = body;
+
+    const updatePayload: any = {};
+
+    if (applicationId) {
+      const application = await Application.findById(applicationId);
+      if (!application) {
+        return NextResponse.json({ error: "Application not found" }, { status: 404 });
+      }
+
+      const gigId = application.gig;
+      const freelancerId = application.freelancer;
+      if(application.status==='accepted')return NextResponse.json({ error: "Not allowed as application has been accepted by the client" }, { status: 403 });
+
+       console.log('reacehd delte applicatio')
+      // Delete application
+      await Application.findByIdAndDelete(applicationId);
+
+      // Remove from User.applications
+      await User.findOneAndUpdate(
+        { clerkId: userId },
+        { $pull: { applications: application._id } }
+      );
+
+      // Remove from Gig.applicants
+      await Gig.findByIdAndUpdate(
+        gigId,
+        { $pull: { applicants: freelancerId } }
+      );
+    }
+          return NextResponse.json({ message: "WithDrawn Successfully" }, { status: 201 });
+
+      
+  } catch (error) {
+    console.log('error at delete/applied-gigs',error)
+     return NextResponse.json({ message: "Error withdrawing" }, { status: 501 });
+
   }
 }

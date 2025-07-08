@@ -1,45 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import connectToDBS from "@/lib/db";
-import User from "@/models/User";
+import Application from "@/models/Application";
 import Gig from "@/models/Gig";
+import User from "@/models/User";
 
 export async function POST(req: NextRequest) {
   try {
     await connectToDBS();
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { clerkId, gigId } = await req.json();
+    const { gigId } = await req.json();
 
-    if (!clerkId || !gigId) {
-      return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    const freelancer = await User.findOne({ clerkId: userId });
+    if (!freelancer || freelancer.role !== "freelancer") {
+      return NextResponse.json({ error: "Only freelancers can apply." }, { status: 403 });
     }
 
-    const user = await User.findOne({ clerkId });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
-
-    //  Already applied?
-    if (user.applications.includes(gigId)) {
-      return NextResponse.json({ error: "Already applied to this gig" }, { status: 400 });
+    const existingApp = await Application.findOne({ gig: gigId, freelancer: freelancer._id });
+    if (existingApp) {
+      return NextResponse.json({ error: "Already applied" }, { status: 400 });
     }
 
-    //  Max 5 applications?
-    if (user.applications.length >= 5) {
-      return NextResponse.json({ error: "Application limit reached" }, { status: 400 });
-    }
+    const application = await Application.create({
+      gig: gigId,
+      freelancer: freelancer._id,
+      status: "pending"
+    });
 
-    const gig = await Gig.findById(gigId);
-    if (!gig) return NextResponse.json({ error: "Gig not found" }, { status: 404 });
+    //  Add the application ID to user's `applications` array
+    await User.findByIdAndUpdate(freelancer._id, {
+      $addToSet: { applications: application._id }
+    });
 
-    //  Update both sides
-    user.applications.push(gig._id);
-    gig.applicants.push(user._id);
+    //  Add freelancer ID to gig's `applicants` array
+    await Gig.findByIdAndUpdate(gigId, {
+      $addToSet: { applicants: freelancer._id }
+    });
 
-    await user.save();
-    await gig.save();
-
-    return NextResponse.json({ success: true, message: "Application submitted" }, { status: 200 });
-
+    return NextResponse.json({ message: "Applied successfully", application });
   } catch (err) {
-    console.error("[APPLY_ERROR]", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Apply error:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

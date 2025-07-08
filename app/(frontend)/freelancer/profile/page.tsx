@@ -12,11 +12,15 @@ import { Label } from '@/components/ui/label'
 import { motion } from 'framer-motion'
 import { Pencil, User as UserIcon, Mail, Code, Link as LinkIcon, Briefcase, Sun, Moon, ArrowLeft, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react'
 
+// Updated interface to match your backend's GET /api/applied-gigs response structure
 interface AppliedGig {
-  _id: string
-  title: string
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn'
-  deadline: string
+  applicationId: string; // Corresponds to app._id from backend
+  gigId: string;         // Corresponds to app.gig?._id from backend
+  gigTitle: string;      // Corresponds to app.gig?.title from backend
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  appliedAt: string;     // Corresponds to app.createdAt from backend
+  // Note: 'deadline' from the gig itself is not directly in your backend's appliedGigs map,
+  // so we will use 'appliedAt' for display or assume it's handled elsewhere.
 }
 
 export default function FreelancerProfilePage() {
@@ -68,10 +72,8 @@ export default function FreelancerProfilePage() {
           throw new Error(errorData.error || 'Failed to load profile')
         }
         const json = await res.json()
-        // setData(json.user)
-        // setBio(json.user.bio || '')
-        // setSkills((json.user.skills || []).join(', '))
-        // setPortfolio(json.user.portfolioSite || '')
+        
+        
         setData(json); 
         setBio(json.bio || '');
         setSkills((json.skills || []).join(', '));
@@ -89,6 +91,7 @@ export default function FreelancerProfilePage() {
   const handleUpdate = async () => {
     setIsUpdating(true)
     try {
+      // Your PUT endpoint for profile updates is /api/applied-gigs
       const res = await fetch('/api/applied-gigs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -106,9 +109,10 @@ export default function FreelancerProfilePage() {
       toast.success('Profile updated successfully!')
       setEditMode(false)
       const updatedData = await res.json()
+      // Assuming your PUT response returns an object with a 'user' key containing updated fields
       setData((prev: any) => ({
         ...prev,
-        bio: updatedData.user.bio,
+        bio: updatedData.user.bio, 
         skills: updatedData.user.skills,
         portfoliosite: updatedData.user.portfoliosite,
       }))
@@ -120,15 +124,23 @@ export default function FreelancerProfilePage() {
     }
   }
 
-  const removeApplication = async (gigId: string) => {
-    if (!confirm('Are you sure you want to withdraw this application?')) {
-      return
+  const removeApplication = async (applicationId: string) => { 
+    
+
+   
+    const confirmed = true; 
+    if (!confirmed) {
+      return;
     }
+
     try {
-      const res = await fetch('/api/remove-application', {
+      
+      const res = await fetch('/api/applied-gigs', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clerkId: user?.id, gigId }),
+        // body: JSON.stringify({ clerkId: user?.id, gigId: applicationId }), 
+        body: JSON.stringify({ applicationId }),
+
       })
 
       if (!res.ok) {
@@ -136,9 +148,10 @@ export default function FreelancerProfilePage() {
         throw new Error(errorData.error || 'Failed to remove application')
       }
       toast.success('Application withdrawn successfully!')
+      // Filter out the withdrawn application from the state
       setData((prev: any) => ({
         ...prev,
-        appliedGigs: prev.appliedGigs.filter((g: AppliedGig) => g._id !== gigId),
+        appliedGigs: prev.appliedGigs.filter((app: AppliedGig) => app.applicationId !== applicationId),
       }))
     } catch (err: any) {
       console.error(err)
@@ -354,9 +367,9 @@ export default function FreelancerProfilePage() {
           </div>
         ) : (
           <ul className="space-y-4">
-            {data?.appliedGigs?.map((gig: AppliedGig) => (
+            {data?.appliedGigs?.map((app: AppliedGig) => ( // Changed gig to app for clarity with backend structure
               <motion.li
-                key={gig._id}
+                key={app.applicationId} // Use applicationId as the key
                 className="flex flex-col sm:flex-row items-start sm:items-center justify-between
                            bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md border border-gray-200 dark:border-gray-700"
                 initial={{ opacity: 0, y: 10 }}
@@ -364,24 +377,27 @@ export default function FreelancerProfilePage() {
                 transition={{ duration: 0.3 }}
               >
                 <div className="mb-2 sm:mb-0">
-                  <p className="font-bold text-xl text-quickgig-text-light dark:text-quickgig-text-dark">{gig.title}</p>
-                  <p className={`text-sm font-semibold ${getStatusColor(gig.status)} flex items-center`}>
-                    {getStatusIcon(gig.status)} Status: {gig.status.toUpperCase()}
+                  <p className="font-bold text-xl text-quickgig-text-light dark:text-quickgig-text-dark">{app.gigTitle}</p> {/* Use gigTitle */}
+                  <p className={`text-sm font-semibold ${getStatusColor(app.status)} flex items-center`}>
+                    {getStatusIcon(app.status)} Status: {app.status.toUpperCase()}
                   </p>
-                  {gig.deadline && (
+                  {app.appliedAt && ( // Use appliedAt for display, as gig.deadline is not available
                     <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center mt-1">
-                      <Clock size={14} className="inline mr-1" /> Deadline: {new Date(gig.deadline).toLocaleDateString()}
+                      <Clock size={14} className="inline mr-1" /> Applied On: {new Date(app.appliedAt).toLocaleDateString()}
                     </p>
                   )}
                 </div>
-                <Button
-                  variant="destructive"
-                  onClick={() => removeApplication(gig._id)}
-                  className="px-4 py-2 rounded-lg text-white font-semibold transition-all duration-300
-                             bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800"
-                >
-                  <Trash2 size={18} className="mr-2" /> Withdraw
-                </Button>
+                {/* Only show withdraw button if status is pending or accepted */}
+                {(app.status === 'pending' || app.status === 'accepted') && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => removeApplication(app.applicationId)} // Pass applicationId
+                    className="px-4 py-2 rounded-lg text-white font-semibold transition-all duration-300
+                               bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800"
+                  >
+                    <Trash2 size={18} className="mr-2" /> Withdraw
+                  </Button>
+                )}
               </motion.li>
             ))}
           </ul>
