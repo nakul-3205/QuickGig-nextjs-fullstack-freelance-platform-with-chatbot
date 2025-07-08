@@ -140,4 +140,60 @@ body {
     @apply bg-background text-foreground;
   }
 }
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Light track for light mode */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888; /* Darker thumb */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark mode scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #333; /* Dark track for dark mode */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #666; /* Lighter thumb for dark mode */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* --- Typing Dots Animation --- */
+/* The element that holds the dots for "Thinking..." */
+.typing-dots {
+  display: inline-block;
+  overflow: hidden; /* Hide excess dots */
+  vertical-align: bottom; /* Align with text baseline */
+  width: 0; /* Start with no width */
+  animation: expandDots 1.5s infinite steps(4, end); /* Control the speed and steps for the dots */
+}
+
+/* Keyframes for the dot animation */
+@keyframes expandDots {
+  0% { width: 0; }
+  25% { width: 4px; } /* One dot */
+  50% { width: 8px; } /* Two dots */
+  75% { width: 12px; } /* Three dots */
+  100% { width: 12px; } /* Hold three dots */
+}
+
+/* You can also style the "Thinking" text if needed, for example: */
+.typing-text {
+  font-style: italic; /* Make it slightly different */
+  opacity: 0.8;
+}
 
