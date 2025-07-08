@@ -109,7 +109,7 @@ export default function QuickGigBot() {
           className="fixed bottom-4 right-4 w-[350px] max-h-[500px] bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-2xl shadow-2xl flex flex-col z-50"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-quickgig-accent text-white rounded-t-2xl">
+          <div className="flex items-center justify-between p-4 bg-quickgig-accent bg-black   dark:text-white rounded-t-2xl">
             <h2 className="font-bold text-lg">QuickGig AI</h2>
             <button onClick={() => setOpen(false)} aria-label="Close chat">
               <X className="text-white" />
