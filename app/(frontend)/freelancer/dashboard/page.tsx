@@ -2,19 +2,45 @@
 
 import { SignOutButton, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
+import { LogOut, Sun, Moon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useClerk } from '@clerk/nextjs'
+import { useState, useEffect }from 'react'
+import { motion } from 'framer-motion'
 
 
 export default function Topbar() {
   const { user } = useUser()
   const router = useRouter()
- const { signOut } = useClerk()
+  const { signOut } = useClerk()
+
+  const [darkMode, setDarkMode] = useState(false)
+
+  useEffect(() => {
+    const savedMode = localStorage.getItem('theme')
+    if (savedMode === 'dark' || (!savedMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      setDarkMode(true)
+      document.documentElement.classList.add('dark')
+    } else {
+      setDarkMode(false)
+      document.documentElement.classList.remove('dark')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [darkMode])
+
   const handleSignOut = async () => {
     try {
-     await signOut();
-     router.push('/')
+      await signOut();
+      router.push('/')
     } catch (err) {
       toast.error('Failed to sign out')
     }
@@ -24,6 +50,17 @@ export default function Topbar() {
     <div className="flex justify-between items-center w-full px-6 py-4 bg-black text-white shadow-md">
       <div className="text-2xl font-bold">QuickGig</div>
       <div className="flex items-center gap-4">
+        {/* Dark Mode Toggle Button */}
+        <motion.button
+          className="p-2 rounded-full bg-gray-700 text-gray-200 shadow-md transition-all duration-300 hover:scale-105"
+          onClick={() => setDarkMode(!darkMode)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </motion.button>
+
         <button
           onClick={() => router.push('/freelancer/profile')}
           className="hover:text-blue-400 transition-all"

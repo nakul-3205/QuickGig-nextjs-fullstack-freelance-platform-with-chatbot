@@ -117,15 +117,15 @@ function SignInRoute() {
     }
   }, []);
 
-  // useEffect(() => {
-  //   if (darkMode) {
-  //     document.documentElement.classList.add('dark');
-  //     localStorage.setItem('theme', 'dark');
-  //   } else {
-  //     document.documentElement.classList.remove('dark');
-  //     localStorage.setItem('theme', 'light');
-  //   }
-  // }, [darkMode]);
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   // Handle Signin submission
  const handleSubmit = async (e: React.FormEvent) => {
